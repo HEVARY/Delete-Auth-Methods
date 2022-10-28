@@ -1,0 +1,376 @@
+{
+	"info": {
+		"_postman_id": "f3fc4079-a3d0-4a3a-9d80-724c95337feb",
+		"name": "AuthMethod Deletion",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "23385999"
+	},
+	"item": [
+		{
+			"name": "Get App-Only Access Token",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"try {\r",
+							"    if (pm.environment.get(\"ClientID\") === \"\")\r",
+							"    {\r",
+							"        console.log(\"You need to enter *ClientID* environment variable first.\");\r",
+							"    }\r",
+							"    if (pm.environment.get(\"ClientSecret\") === \"\")\r",
+							"    {\r",
+							"        console.log(\"You need to enter *ClientSecret* environment variable first.\");\r",
+							"    }\r",
+							"    if (pm.environment.get(\"TenantID\") === \"\")\r",
+							"    {\r",
+							"        console.log(\"You need to enter *TenantID* environment variable first.\");\r",
+							"    }\r",
+							"    else\r",
+							"    {\r",
+							"        var json = JSON.parse(responseBody);\r",
+							"        postman.setEnvironmentVariable(\"AppAccessToken\", json.access_token);\r",
+							"    }\r",
+							"}\r",
+							"catch (e) {\r",
+							"    console.log(e);\r",
+							"}\r",
+							"\r",
+							""
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/x-www-form-urlencoded",
+						"type": "text"
+					},
+					{
+						"key": "SdkVersion",
+						"value": "postman-graph/v1.0",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "grant_type",
+							"value": "client_credentials",
+							"type": "text"
+						},
+						{
+							"key": "client_id",
+							"value": "{{ClientID}}",
+							"type": "text"
+						},
+						{
+							"key": "client_secret",
+							"value": "{{ClientSecret}}",
+							"type": "text"
+						},
+						{
+							"key": "scope",
+							"value": "https://graph.microsoft.com/.default",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "https://login.microsoftonline.com/{{TenantID}}/oauth2/v2.0/token",
+					"protocol": "https",
+					"host": [
+						"login",
+						"microsoftonline",
+						"com"
+					],
+					"path": [
+						"{{TenantID}}",
+						"oauth2",
+						"v2.0",
+						"token"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get All User AuthMethods",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"try {\r",
+							"    if (responseBody.indexOf(\"InvalidAuthenticationToken\") !== -1)\r",
+							"    {\r",
+							"        console.log(\"You need to run *Get App-Only Access Token* request first.\");\r",
+							"    }\r",
+							"    else\r",
+							"    {\r",
+							"        if (pm.environment.get(\"UserId\") === \"\")\r",
+							"        {\r",
+							"            console.log(\"You need to run *Application | Get Users* request first or set a UserId environment variable.\");\r",
+							"        }\r",
+							"        else\r",
+							"        {\r",
+							"            if (pm.response.status === \"Forbidden\")\r",
+							"            {\r",
+							"                console.log(\"You need to add user delegated permissions in your application to atleast *Mail.Read.All* in portal.azure.com and then consent as user or Grant admin consent in portal. And re-run *Application | Get App-Only Access Token* request to update access token. \");\r",
+							"            }\r",
+							"            else\r",
+							"            {\r",
+							"                if (responseBody.indexOf(\"ResourceNotFound\") !== -1)\r",
+							"                {\r",
+							"                    console.log(\"You need to pick a UserId who has a license for a mailbox.\");\r",
+							"                }\r",
+							"                else\r",
+							"                {\r",
+							"                    var json = JSON.parse(responseBody);\r",
+							"                    postman.setEnvironmentVariable(\"MessageId\", json.value[0].id);\r",
+							"                }\r",
+							"            }\r",
+							"        }\r",
+							"    }\r",
+							"}\r",
+							"catch (e) {\r",
+							"    console.log(e);\r",
+							"}\r",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{AppAccessToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					},
+					{
+						"key": "SdkVersion",
+						"value": "postman-graph/v1.0",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "https://graph.microsoft.com/v1.0/users/adamh@jprolab.xyz/authentication/Methods",
+					"protocol": "https",
+					"host": [
+						"graph",
+						"microsoft",
+						"com"
+					],
+					"path": [
+						"v1.0",
+						"users",
+						"adamh@jprolab.xyz",
+						"authentication",
+						"Methods"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Add Phone Methods - Mobile",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"try {\r",
+							"    if (responseBody.indexOf(\"InvalidAuthenticationToken\") !== -1)\r",
+							"    {\r",
+							"        console.log(\"You need to run *Get App-Only Access Token* request first.\");\r",
+							"    }\r",
+							"    else\r",
+							"    {\r",
+							"        if (pm.response.status === \"Forbidden\")\r",
+							"        {\r",
+							"            console.log(\"You need to add user application permissions in your application to at least *User.Invite.All* in portal.azure.com and then consent as user or Grant admin consent in portal. And re-run *Application | Get App-Only Access Token* request to update access token. \");\r",
+							"        }\r",
+							"        else\r",
+							"        {\r",
+							"            var json = JSON.parse(responseBody);\r",
+							"            // Get invited user id\r",
+							"            postman.setEnvironmentVariable(\"UserId\", json.invitedUser.id);\r",
+							"        }\r",
+							"    }\r",
+							"}\r",
+							"catch (e) {\r",
+							"    console.log(e);\r",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{AppAccessToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "SdkVersion",
+						"type": "text",
+						"value": "postman-graph/v1.0"
+					},
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"phoneNumber\": \"+1 4254997560\",\r\n  \"phoneType\": \"mobile\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://graph.microsoft.com/v1.0/users/adamh@jprolab.xyz/authentication/phoneMethods",
+					"protocol": "https",
+					"host": [
+						"graph",
+						"microsoft",
+						"com"
+					],
+					"path": [
+						"v1.0",
+						"users",
+						"adamh@jprolab.xyz",
+						"authentication",
+						"phoneMethods"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete Phone Methods - Mobile",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"try {\r",
+							"    if (responseBody.indexOf(\"InvalidAuthenticationToken\") !== -1)\r",
+							"    {\r",
+							"        console.log(\"You need to run *Get App-Only Access Token* request first.\");\r",
+							"    }\r",
+							"    else\r",
+							"    {\r",
+							"        if (pm.environment.get(\"UserId\") === \"\")\r",
+							"        {\r",
+							"            console.log(\"You need to run *Application | Get Users* request first or set a UserId environment variable.\");\r",
+							"        }\r",
+							"        else\r",
+							"        {\r",
+							"            if (pm.response.status === \"Forbidden\")\r",
+							"            {\r",
+							"                console.log(\"You need to add user delegated permissions in your application to atleast *Mail.Read.All* in portal.azure.com and then consent as user or Grant admin consent in portal. And re-run *Application | Get App-Only Access Token* request to update access token. \");\r",
+							"            }\r",
+							"            else\r",
+							"            {\r",
+							"                if (responseBody.indexOf(\"ResourceNotFound\") !== -1)\r",
+							"                {\r",
+							"                    console.log(\"You need to pick a UserId who has a license for a mailbox.\");\r",
+							"                }\r",
+							"                else\r",
+							"                {\r",
+							"                    var json = JSON.parse(responseBody);\r",
+							"                    postman.setEnvironmentVariable(\"MessageId\", json.value[0].id);\r",
+							"                }\r",
+							"            }\r",
+							"        }\r",
+							"    }\r",
+							"}\r",
+							"catch (e) {\r",
+							"    console.log(e);\r",
+							"}\r",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{AppAccessToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					},
+					{
+						"key": "SdkVersion",
+						"value": "postman-graph/v1.0",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "https://graph.microsoft.com/v1.0/users/adamh@jprolab.xyz/authentication/phoneMethods/3179e48a-750b-4051-897c-87b9720928f7",
+					"protocol": "https",
+					"host": [
+						"graph",
+						"microsoft",
+						"com"
+					],
+					"path": [
+						"v1.0",
+						"users",
+						"adamh@jprolab.xyz",
+						"authentication",
+						"phoneMethods",
+						"3179e48a-750b-4051-897c-87b9720928f7"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
